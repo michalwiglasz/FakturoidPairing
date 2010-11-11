@@ -15,6 +15,8 @@ abstract class EmailStatement extends Statement {
 
     protected $connection;
 
+    protected $checkToDate;
+
     public function __construct($configuration)
     {
         parent::construct($configuration);
@@ -28,6 +30,8 @@ abstract class EmailStatement extends Statement {
 
         if(!$this->connection)
                 throw new Exception('Nepovedlo se připojit k poštovnímu serveru.');
+
+        $this->checkToDate = strtotime($configuration['mail_checktodate']);
     }
     
     public function getPayments() {
@@ -38,6 +42,8 @@ abstract class EmailStatement extends Statement {
         for($i = 1; $i <= $messageCount; $i++)
         {
             $headers = imap_header($this->connection, $i);
+            
+            if(strtotime($headers->date) < $this->checkToDate) continue;
 
             if(($p = $this->processEmail($i, $headers)))
             {
