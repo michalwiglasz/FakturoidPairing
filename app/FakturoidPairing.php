@@ -35,13 +35,13 @@ class FakturoidPairing {
      */
     protected function getFakturoidModel()
     {
-            if (!$this->model) {
-                    if (empty($this->cfg['username']) || empty($this->cfg['api_key'])) {
-                            throw new Exception('V konfiguraci chybí uživatelské jméno nebo API klíč.');
-                    }
-                    $this->model = new FakturoidModel($this->cfg['username'], $this->cfg['api_key']);
+        if (!$this->model) {
+            if (empty($this->cfg['username']) || empty($this->cfg['api_key'])) {
+                throw new Exception('V konfiguraci chybí uživatelské jméno nebo API klíč.');
             }
-            return $this->model;
+            $this->model = new FakturoidModel($this->cfg['username'], $this->cfg['api_key']);
+        }
+        return $this->model;
     }
 
     public function run()
@@ -49,6 +49,15 @@ class FakturoidPairing {
         $invoices = $this->getFakturoidModel()->getUnpaidInvoices();
 
         dump($invoices);
+
+        $cls = $this->cfg['statement_type'] . 'Statement';
+        if(!class_exists($cls)) throw new Exception ('Neplatný typ zdroje plateb (' . $this->cfg['statement_type'] . '.');
+
+        $statement = new $cls($this->cfg);
+
+        $payments = $statement->getPayments();
+
+        dump($payments);
     }
 
 }

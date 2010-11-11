@@ -1,11 +1,12 @@
 <?php
+define('CONSOLE', php_sapi_name()=='cli');
+define('LF', CONSOLE ? "\n" : "<br>");
 
 include_once dirname(__FILE__) . '/nette.php';
 
 NDebug::enable();
 
 $app = new FakturoidPairing('config.ini');
-
 $app->run();
 
 
@@ -13,7 +14,10 @@ $app->run();
 // autoload
 function __autoload($class)
 {
-    include_once dirname(__FILE__) . '/app/' . $class . '.php';
+    if(is_file(dirname(__FILE__) . '/app/' . $class . '.php'))
+        include_once dirname(__FILE__) . '/app/' . $class . '.php';
+    else
+        include_once dirname(__FILE__) . '/app/Statement/' . $class . '.php';
 }
 
 // helpers
@@ -21,9 +25,9 @@ if(!function_exists('dump'))
 {
     function dump($var)
     {
-        echo "<pre>";
+        if(!CONSOLE) echo "<pre>";
         var_dump($var);
-        echo "</pre>";
+        if(!CONSOLE) echo "</pre>";
     }
 }
 

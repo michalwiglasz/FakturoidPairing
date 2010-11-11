@@ -123,7 +123,10 @@ class FakturoidModel
 		while($this->getFile("invoices.xml?page=$page")->xpath->evaluate("count(//invoice)")) {
 			$nodes = $this->getFile("invoices.xml?page=$page")->xpath->evaluate("//invoice[status!='paid']");
                         foreach($nodes as $n)
-                            $list[] = $this->DOMElementToStdClass($n);
+                        {
+                            $inv = $this->DOMElementToStdClass($n);
+                            $list[$inv->id] = $inv;
+                        }
 			$page++;
 		}
 		return $list;
