@@ -6,6 +6,8 @@ include_once dirname(__FILE__) . '/nette.php';
 
 NDebug::enable();
 
+date_default_timezone_set('Europe/Prague');
+
 $app = new FakturoidPairing('config.ini');
 $app->run();
 
