@@ -1,0 +1,9 @@
+temp
+log
+logs
+files
+sessions
+~$*
+*.tmp
+config.ini
+nbproject
