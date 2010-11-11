@@ -92,10 +92,11 @@ class FakturoidModel
 			CURLOPT_RETURNTRANSFER => TRUE, // return response
 			CURLOPT_FAILONERROR => TRUE, // HTTP errors
 
-			CURLOPT_USERPWD => "$username:$apiKey", // auth
+			CURLOPT_USERPWD => "vera.pohlova:$apiKey", // auth
 			CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
 
-			CURLOPT_SSL_VERIFYPEER => TRUE, // HTTPS, certificate
+                        //FIXME: SSL verification fails for some reason
+			CURLOPT_SSL_VERIFYPEER => FALSE /*TRUE*/, // HTTPS, certificate
 			CURLOPT_SSL_VERIFYHOST => 2,
 			CURLOPT_CAINFO => dirname(__FILE__) . '/fakturoid.crt',
 		));
@@ -120,9 +121,52 @@ class FakturoidModel
 		$list = array();
 		$page = 1;
 		while($this->getFile("invoices.xml?page=$page")->xpath->evaluate("count(//invoice)")) {
-			$list = array_merge($this->getFile("invoices.xml?page=$page")->xpath->evaluate("//invoice[status!='paid']"));
+			$nodes = $this->getFile("invoices.xml?page=$page")->xpath->evaluate("//invoice[status!='paid']");
+                        foreach($nodes as $n)
+                            $list[] = $this->DOMElementToStdClass($n);
 			$page++;
 		}
 		return $list;
 	}
+
+        private function DOMElementToStdClass(DOMNode $el)
+        {
+            $obj = new StdClass;
+
+            if($el instanceof DOMText)
+            {
+                return mb_trim($el->textContent);
+            }
+
+            if(($el->firstChild === $el->lastChild) && (($child = $el->childNodes->item(0)) instanceof DOMText))
+            {
+                return mb_trim($el->childNodes->item(0)->textContent);
+            }
+
+            $hasChildren = FALSE;
+            foreach($el->childNodes as $child)
+            {
+                $hasChildren = TRUE;
+                $contents = $this->DOMElementToStdClass($child);
+                if($child instanceof DOMText && $contents === '') continue;
+                
+                if(isset($obj->{$child->nodeName}))
+                {
+                    if(is_array($obj->{$child->nodeName}))
+                    {
+                        $obj->{$child->nodeName}[] = $contents;
+                    }
+                    else
+                    {
+                        $obj->{$child->nodeName} = array($obj->{$child->nodeName}, $contents);
+                    }
+                }
+                else
+                {
+                    $obj->{$child->nodeName} = $contents;
+                }
+            }
+
+            return $hasChildren ? $obj : NULL;
+        }
 }
