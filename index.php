@@ -30,6 +30,7 @@ if(!function_exists('dump'))
         if(!CONSOLE) echo "<pre>";
         var_dump($var);
         if(!CONSOLE) echo "</pre>";
+        return $var;
     }
 }
 
