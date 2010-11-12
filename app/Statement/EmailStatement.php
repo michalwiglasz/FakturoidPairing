@@ -13,10 +13,21 @@
  */
 abstract class EmailStatement extends Statement {
 
+    /**
+     *
+     * @var resource IMAP connection
+     */
     protected $connection;
 
+    /**
+     *
+     * @var timestamp Check emails only since this date
+     */
     protected $checkToDate;
 
+    /**
+     * @param array $configuration
+     */
     public function __construct($configuration)
     {
         parent::construct($configuration);
@@ -33,7 +44,12 @@ abstract class EmailStatement extends Statement {
 
         $this->checkToDate = strtotime($configuration['mail_checktodate']);
     }
-    
+
+    /**
+     * Return list of payments on the statement
+     *
+     * @return array
+     */
     public function getPayments() {
         $payments = array();
 
@@ -57,6 +73,12 @@ abstract class EmailStatement extends Statement {
         return $payments;
     }
 
+    /**
+     * Fetches email body
+     *
+     * @param int $msgno Message number
+     * @return string
+     */
     protected function fetchBody($msgno)
     {
         $body = imap_fetchbody($this->connection, $msgno, '1', FT_PEEK);
@@ -86,6 +108,9 @@ abstract class EmailStatement extends Statement {
         return $body;
     }
 
+    /**
+     * Checks email for payment
+     */
     abstract function processEmail($msgno, $headers);
 }
 

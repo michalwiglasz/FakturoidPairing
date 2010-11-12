@@ -13,13 +13,25 @@
  */
 abstract class Statement {
 
+    /**
+     *
+     * @var array configuration
+     */
     protected $cfg;
 
+    /**
+     * @param array $configuration
+     */
     public function construct($configuration)
     {
         $this->cfg = $configuration;
     }
 
+    /**
+     * Return list of payments on the statement
+     *
+     * @return array
+     */
     abstract public function getPayments();
     
 }
