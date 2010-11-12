@@ -92,10 +92,9 @@ class FakturoidModel
 
                 CURLOPT_USERPWD => "vera.pohlova:$apiKey", // auth
                 CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
-                //FIXME: SSL verification fails for some reason
-                CURLOPT_SSL_VERIFYPEER => FALSE /* TRUE */, // HTTPS, certificate
+                CURLOPT_SSL_VERIFYPEER => TRUE, // HTTPS, certificate
                 CURLOPT_SSL_VERIFYHOST => 2,
-                CURLOPT_CAINFO => dirname(__FILE__) . '/fakturoid.crt',
+                CURLOPT_CAINFO => dirname(__FILE__) . '/cacert.pem', // downloaded from http://curl.haxx.se/docs/caextract.html
             ));
 
             return $c;
