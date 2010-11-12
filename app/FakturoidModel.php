@@ -88,7 +88,6 @@ class FakturoidModel
             $c = curl_init();
             curl_setopt_array($c, array(
                 CURLOPT_URL => "https://$username.fakturoid.cz/$fileName", // url
-                CURLOPT_RETURNTRANSFER => TRUE, // return response
                 CURLOPT_FAILONERROR => TRUE, // HTTP errors
 
                 CURLOPT_USERPWD => "vera.pohlova:$apiKey", // auth
@@ -113,6 +112,7 @@ class FakturoidModel
 		$error = NULL;
 
 		$c = $this->setupCurl($fileName);
+                curl_setopt($c, CURLOPT_RETURNTRANSFER, TRUE); // return response
 		$response = curl_exec($c);
 		if ($response === FALSE) {
 			$error = curl_error($c);
@@ -134,8 +134,13 @@ class FakturoidModel
 	{
 		$error = NULL;
 
-		$c = $this->setupCurl('/invoices/' . $invoiceId . '/fire?event=' . $event);
-                curl_setopt(CURLOPT_POST, TRUE);
+		$c = $this->setupCurl('invoices/' . intval($invoiceId) . '/fire?event=' . urlencode($event));
+                curl_setopt($c, CURLOPT_POST, TRUE);
+                curl_setopt($c, CURLOPT_HTTPHEADER, array(
+                  'Accept: application/xml',
+                  'Content-Type: application/xml',
+                ));
+                
 		$response = curl_exec($c);
 		if ($response === FALSE) {
 			$error = curl_error($c);
@@ -175,6 +180,7 @@ class FakturoidModel
                 throw new Exception('Neplatné ID faktury.');
                 
             $result = $this->fireInvoice($invoiceId, 'pay');
+            
             return (bool)$result;
         }
 

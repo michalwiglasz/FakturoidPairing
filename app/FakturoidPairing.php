@@ -54,24 +54,34 @@ class FakturoidPairing {
         $invoices = $this->getFakturoidModel()->getUnpaidInvoices();
         $payments = $statement->getPayments();
 
+        echo "Unpaid invoices: " . count($invoices) . LF;
+        echo "Payments on statement: " . count($payments) . LF;
+
         foreach($invoices as $inv)
         {
             foreach($payments as $pay)
             {
-                if($pay->{variable-symbol} === $inv->{variable-symbol} /* && $pay->amount === floatval($inv->total) */)
+                if($pay->{'variable-symbol'} === intval($inv->{'variable-symbol'}) /* && $pay->amount === floatval($inv->total) */)
                 {
-                    echo "Invoice $inv->number: $inv->client, $inv->amount CZK" . LF;
-                    echo "  issued on " . date('d.m.Y', strtotime($inv->{issued-on})) . ", paid on " . date('d.m.Y', $pay->date) . LF;
+                    echo "Invoice $inv->number: {$inv->{'client-name'}}, $inv->total CZK" . LF;
+                    echo "  issued on " . date('d.m.Y', strtotime($inv->{'issued-on'})) . ", paid on " . date('d.m.Y', $pay->date) . LF;
                     
-                    if($this->getFakturoidModel()->MarkAsPaid($inv->id))
-                        echo "  OK: Invoice succesfully marked as paid.\n";
-                    else
-                        echo "  ERR: Invoice $inv->number cannot be marked as paid.\n";
+                    try
+                    {
+                        $this->getFakturoidModel()->MarkAsPaid($inv->id);
+                        echo "  OK: Invoice succesfully marked as paid.\n" . LF;
+                    }
+                    catch(Exception $ex)
+                    {
+                        echo "  ERR: Invoice $inv->number cannot be marked as paid: $ex->message\n" . LF;
+                    }
 
                     break; // next invoice
                 }
             }
         }
+
+        echo "Done." . LF;
     }
 
 }
