@@ -15,6 +15,13 @@ class CsobEmailStatement extends EmailStatement {
 
     const REGEX = '#dne\s+([0-9]{1,2})\.([0-9]{1,2})\.(2[0-9]{3}).+(.|\n)+částka ([+-]?[0-9]+(,[0-9]+)?)(.|\n)+VS\s+([0-9]+)#ui';
 
+    /**
+     * Checks email for payment
+     *
+     * @param int $msgno Message number
+     * @param array $headers Email headers
+     * @return array List of payments found in this email
+     */
     function processEmail($msgno, $headers)
     {
         $from = $headers->from[0];
@@ -24,19 +31,18 @@ class CsobEmailStatement extends EmailStatement {
 
         $body = $this->fetchBody($msgno);
 
-
         $payments = array();
         if(preg_match_all(self::REGEX, $body, $matches, PREG_SET_ORDER))
         {
             foreach($matches as $m)
             {
-                $ammount = floatval(str_replace(',', '.', $m[5]));
-                if($ammount > 0)
+                $amount = floatval(str_replace(',', '.', $m[5]));
+                if($amount > 0)
                 {
                     $payments[] = (object)array(
                         'variable-symbol' => intval($m[8]),
                         'date' => mktime(0,0,0, $m[2], $m[1], $m[3]),
-                        'ammount' => $ammount,
+                        'amount' => $amount,
                     );
                 }
             }
