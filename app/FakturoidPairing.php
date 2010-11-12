@@ -54,7 +54,24 @@ class FakturoidPairing {
         $invoices = $this->getFakturoidModel()->getUnpaidInvoices();
         $payments = $statement->getPayments();
 
-        dump($payments);
+        foreach($invoices as $inv)
+        {
+            foreach($payments as $pay)
+            {
+                if($pay->{variable-symbol} === $inv->{variable-symbol} /* && $pay->amount === floatval($inv->total) */)
+                {
+                    echo "Invoice $inv->number: $inv->client, $inv->amount CZK" . LF;
+                    echo "  issued on " . date('d.m.Y', strtotime($inv->{issued-on})) . ", paid on " . date('d.m.Y', $pay->date) . LF;
+                    
+                    if($this->getFakturoidModel()->MarkAsPaid($inv->id))
+                        echo "  OK: Invoice succesfully marked as paid.\n";
+                    else
+                        echo "  ERR: Invoice $inv->number cannot be marked as paid.\n";
+
+                    break; // next invoice
+                }
+            }
+        }
     }
 
 }

@@ -64,42 +64,78 @@ class FakturoidModel
 		return $this->fileCache[$fileName];
 	}
 
-	/**
-	 * Fetches wanted file from server.
-	 *
-	 * Uses HTTPS authorization and certificate check. See these tutorials:
+        /**
+         * Prepares cURL session
+         *
+         * Uses HTTPS authorization and certificate check. See these tutorials:
 	 *  - http://www.electrictoolbox.com/php-curl-sending-username-password/
 	 *  - http://unitstep.net/blog/2009/05/05/using-curl-in-php-to-access-https-ssltls-protected-sites/
 	 *  - http://www.php.net/manual/en/function.curl-error.php#87212
+	 *
+         *
+         * @param string $fileName to open
+         * @return resource cURL session
+         */
+        private function setupCurl($fileName)
+        {
+            $username = $this->username;
+            $apiKey = $this->apiKey;
+
+            if (!$username || !$apiKey) {
+                    throw new Exception('Chybí uživatelské jméno nebo API klíč.');
+            }
+
+            $c = curl_init();
+            curl_setopt_array($c, array(
+                CURLOPT_URL => "https://$username.fakturoid.cz/$fileName", // url
+                CURLOPT_RETURNTRANSFER => TRUE, // return response
+                CURLOPT_FAILONERROR => TRUE, // HTTP errors
+
+                CURLOPT_USERPWD => "vera.pohlova:$apiKey", // auth
+                CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+                //FIXME: SSL verification fails for some reason
+                CURLOPT_SSL_VERIFYPEER => FALSE /* TRUE */, // HTTPS, certificate
+                CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_CAINFO => dirname(__FILE__) . '/fakturoid.crt',
+            ));
+
+            return $c;
+        }
+
+	/**
+	 * Fetches wanted file from server.
 	 *
 	 * @param string $file
 	 * @return string Response, should be XML.
 	 */
 	private function fetch($fileName)
 	{
-		$username = $this->username;
-		$apiKey = $this->apiKey;
-
-		if (!$username || !$apiKey) {
-			throw new Exception('Chybí uživatelské jméno nebo API klíč.');
-		}
-
 		$error = NULL;
 
-		$c = curl_init();
-		curl_setopt_array($c, array(
-			CURLOPT_URL => "https://$username.fakturoid.cz/$fileName", // url
-			CURLOPT_RETURNTRANSFER => TRUE, // return response
-			CURLOPT_FAILONERROR => TRUE, // HTTP errors
+		$c = $this->setupCurl($fileName);
+		$response = curl_exec($c);
+		if ($response === FALSE) {
+			$error = curl_error($c);
+		}
+		curl_close($c);
+		if ($error) {
+			throw new Exception($error);
+		}
+		return $response;
+	}
 
-			CURLOPT_USERPWD => "vera.pohlova:$apiKey", // auth
-			CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
+        /**
+	 * Fires an event on an invoice
+	 *
+	 * @param int $invoiceId
+	 * @return string eventy name, @see https://github.com/fakturoid/fakturoid_api/wiki/Invoice
+	 */
+	private function fireInvoice($invoiceId, $event)
+	{
+		$error = NULL;
 
-                        //FIXME: SSL verification fails for some reason
-			CURLOPT_SSL_VERIFYPEER => FALSE /*TRUE*/, // HTTPS, certificate
-			CURLOPT_SSL_VERIFYHOST => 2,
-			CURLOPT_CAINFO => dirname(__FILE__) . '/fakturoid.crt',
-		));
+		$c = $this->setupCurl('/invoices/' . $invoiceId . '/fire?event=' . $event);
+                curl_setopt(CURLOPT_POST, TRUE);
 		$response = curl_exec($c);
 		if ($response === FALSE) {
 			$error = curl_error($c);
@@ -132,6 +168,22 @@ class FakturoidModel
 		return $list;
 	}
 
+        public function markAsPaid($invoiceId)
+        {
+            $invoiceId = intval($invoiceId);
+            if(!$invoiceId)
+                throw new Exception('Neplatné ID faktury.');
+                
+            $result = $this->fireInvoice($invoiceId, 'pay');
+            return (bool)$result;
+        }
+
+        /**
+         * Converts DOMElement into STDClass
+         *
+         * @param DOMNode $el
+         * @return STDClass
+         */
         private function DOMElementToStdClass(DOMNode $el)
         {
             $obj = new StdClass;
