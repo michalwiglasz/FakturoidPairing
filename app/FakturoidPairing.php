@@ -48,14 +48,26 @@ class FakturoidPairing {
     {
         $cls = $this->cfg['statement_type'] . 'Statement';
         if(!class_exists($cls)) throw new Exception ('Neplatný typ zdroje plateb (' . $this->cfg['statement_type'] . '.');
-
         $statement = new $cls($this->cfg);
-        
-        $invoices = $this->getFakturoidModel()->getUnpaidInvoices();
-        $payments = $statement->getPayments();
 
+        $invoices = $this->getFakturoidModel()->getUnpaidInvoices();
         echo "Unpaid invoices: " . count($invoices) . LF;
+        
+        if(count($invoices) == 0)
+        {
+            echo "Nothing to do." . LF;
+            return;
+        }
+
+        $payments = $statement->getPayments();
         echo "Payments on statement: " . count($payments) . LF;
+
+        if(count($payments) == 0)
+        {
+            echo "Nothing to do." . LF;
+            return;
+        }
+        
 
         foreach($invoices as $inv)
         {
