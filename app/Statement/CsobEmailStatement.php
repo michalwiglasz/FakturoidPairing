@@ -14,6 +14,7 @@
 class CsobEmailStatement extends EmailStatement {
 
     const REGEX = '#dne\s+([0-9]{1,2})\.([0-9]{1,2})\.(2[0-9]{3}).+(.|\n)+částka ([+-]?[0-9]+(,[0-9]+)?)(.|\n)+VS\s+([0-9]+)#ui';
+    const PAYMENT_DELIMETER = 'Zůstatek na účtu po zaúčtování transakce';
 
     /**
      * Checks email for payment
@@ -30,11 +31,14 @@ class CsobEmailStatement extends EmailStatement {
                 return NULL;
 
         $body = $this->fetchBody($msgno);
+        
+        $parts = explode(self::PAYMENT_DELIMETER, $body);
 
         $payments = array();
-        if(preg_match_all(self::REGEX, $body, $matches, PREG_SET_ORDER))
+        
+        foreach($parts as $p)
         {
-            foreach($matches as $m)
+            if(preg_match(self::REGEX, $p, $m))
             {
                 $amount = floatval(str_replace(',', '.', $m[5]));
                 if($amount > 0)
